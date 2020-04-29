@@ -8,7 +8,7 @@ using Richardson, Test
     end
     @test val ≈ 1 rtol=1e-10
     @test err < 1e-10
-    @test all(>(0), X)
+    @test all(x -> x > 0, X)
     @test length(X) == 6
 
     empty!(X)
@@ -18,6 +18,6 @@ using Richardson, Test
     end
     @test val ≈ 1 rtol=1e-10
     @test err < 1e-10
-    @test all(<(0), X)
+    @test all(x -> x < 0, X)
     @test length(X) == 6
 end
