@@ -80,7 +80,7 @@ h = 2.44140625e-5
 h = 3.0517578125e-6
 (0.5403023058683176, 1.7075230118734908e-12)
 ```
-The output `0.5403023058683176` differes from `cos(1)` by `≈ 1.779e-13`, so in this case the returned error estimate is pretty accurate.   Unlike the previous example, `extrapolate` is not able
+The output `0.5403023058683176` differes from `cos(1)` by `≈ 1.779e-13`, so in this case the returned error estimate is only a little conservative.   Unlike the previous example, `extrapolate` is not able
 to attain machine precision (the floating-point cancellation error in this function is quite severe for small `h`!), but it is able to get surprisingly close.
 
 Using the `x0` keyword argument, we can compute the limit of `f(x)`
