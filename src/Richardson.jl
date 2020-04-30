@@ -61,7 +61,7 @@ function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=0,
     numeval = 1
     while numeval < maxeval
         numeval += 1
-        h *= contract
+        h = oftype(h, h * contract)
         push!(neville, f(x0+h))
         c = invcontract
         minerr′ = oftype(err, Inf)
@@ -71,7 +71,7 @@ function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=0,
             err′ = norm(neville[i] - old)
             minerr′ = min(minerr′, err′)
             if err′ < err
-                f₀, err = neville[i], err′
+                f₀, err = neville[i], oftype(err, err′)
             end
             c *= invcontract
         end

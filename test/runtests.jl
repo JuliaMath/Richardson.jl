@@ -47,4 +47,11 @@ using Richardson, Test, LinearAlgebra
     val, err = extrapolate(x -> [sin(x)/x, cos(x)], 0.1, rtol=1e-10)
     @test val ≈ [1,1] rtol=1e-10
     @test err < norm([1,1])*1e-10
+
+    # Float32 specified via starting h
+    val, err = extrapolate(x -> sin(x)/x, 1.0f0, rtol=1e-5)
+    @test val ≈ 1.0 rtol=1e-5
+    @test err < 1e-7
+    @test val isa Float32
+    @test err isa Float32
 end
