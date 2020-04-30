@@ -52,7 +52,7 @@ using Richardson, Test, LinearAlgebra
     val, err = extrapolate(x -> log(x)/sqrt(x-1), 0.2, x0=1.0)
     @test abs(val) < 1e-6 && abs(err) < 1e-6
 
-    # rapid convergence via Puiseaux series:
+    # rapid convergence via Puiseux series:
     val, err = extrapolate(x -> log(x)/sqrt(x-1), 0.2, x0=1.0, power=0.5)
     @test abs(val) < 1e-12 && abs(err) < 1e-12
 
