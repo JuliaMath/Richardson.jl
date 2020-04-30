@@ -49,7 +49,7 @@ function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=0,
                      rtol::Real=sqrt(eps(typeof(float(h_)))), atol::Real=0, maxeval=typemax(Int))
     if isinf(x0)
         # use a change of variables x = 1/u
-        return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, contract = contract > 1 ? inv(contract) : contract, x0=inv(x0))
+        return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, maxeval=maxeval, contract = contract > 1 ? inv(contract) : contract, x0=inv(x0))
     end
     (rtol ≥ 0 && atol ≥ 0) || throw(ArgumentError("rtol and atol must be nonnegative"))
     0 < contract < 1 || throw(ArgumentError("contract must be in (0,1)"))
