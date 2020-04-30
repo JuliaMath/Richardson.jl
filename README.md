@@ -158,7 +158,7 @@ Another possibility for a finite-difference/Richardson combination was suggested
 
 ```jl
 # returns (f'(x), f''(x))
-function ridderderiv2(f, x, h; atol=0, rtol=atol>0 ? 0 : sqrt(eps(typeof(float(x+h)))))
+function riddersderiv2(f, x, h; atol=0, rtol=atol>0 ? 0 : sqrt(eps(typeof(float(x+h)))))
     f₀ = f(x)
     val, err = extrapolate(h, atol=atol, rtol=rtol, power=2) do h
         f₊, f₋ = f(x+h), f(x-h)
@@ -171,7 +171,7 @@ end
 
 For example,
 ```jl
-julia> ridderderiv2(1, 0.1, rtol=0) do x
+julia> riddersderiv2(1, 0.1, rtol=0) do x
            @show x
            sin(x)
        end
