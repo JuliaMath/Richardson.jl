@@ -18,7 +18,8 @@ using LinearAlgebra
 export extrapolate
 
 """
-    extrapolate(f, h; rtol=sqrt(ε), atol=0, contract=0.125, x0=0)
+    extrapolate(f, h; contract=0.125, x0=0,
+                      rtol=sqrt(ε), atol=0, maxeval=typemax(Int))
 
 Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
 (or `x < x0` if `h < 0`) using Richardson's extrapolation starting at
@@ -27,8 +28,12 @@ and an error estimate.
 
 On each step of Richardson's extrapolation, it shrinks `x-x0` by
 a factor of `contract`, stopping when the estimated error is
-`< max(rtol*f₀, atol)` or when the estimated error starts to
-increase (e.g. due to numerical errors in the computation of `f`).
+`< max(rtol*f₀, atol)`, when the estimated error starts to
+increase (e.g. due to numerical errors in the computation of `f`),
+or when `f` has been evaluated `maxeval` times.   Note that
+if the function may converge to zero, you should probably
+specify a nonzero `atol` (which cannot be set by default
+because it depends on the scale/units of `f`).
 
 If `x0 = ±∞` (`±Inf`), then `extrapolate` computes the limit of
 `f(x)` as `x ⟶ ±∞` using geometrically *increasing* values
@@ -40,7 +45,8 @@ severe cancellation errors), but small enough that `f` does not
 oscillate much between `x0` and `h`.  i.e. `h` should be a typical
 scale over which the function `f` varies significantly.
 """
-function extrapolate(f, h_::Number; rtol::Real=sqrt(eps(typeof(float(h_)))), atol::Real=0, contract::Real=0.125, x0::Number=0)
+function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=0,
+                     rtol::Real=sqrt(eps(typeof(float(h_)))), atol::Real=0, maxeval=typemax(Int))
     if isinf(x0)
         # use a change of variables x = 1/u
         return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, contract = contract > 1 ? inv(contract) : contract, x0=inv(x0))
@@ -52,7 +58,9 @@ function extrapolate(f, h_::Number; rtol::Real=sqrt(eps(typeof(float(h_)))), ato
     neville = [f(x0+h)] # the current diagonal of the Neville tableau
     f₀ = neville[1]
     err = oftype(norm(f₀), Inf)
-    while true
+    numeval = 1
+    while numeval < maxeval
+        numeval += 1
         h *= contract
         push!(neville, f(x0+h))
         c = invcontract

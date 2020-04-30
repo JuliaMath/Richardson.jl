@@ -11,6 +11,15 @@ using Richardson, Test, LinearAlgebra
     @test all(x -> x > 0, X)
     @test length(X) == 6
 
+    X2 = Float64[]
+    val, err = extrapolate(1.0, rtol=1e-10, contract=0.1, maxeval=3) do x
+        push!(X2, x)
+        sin(x)/x
+    end
+    @test X2 == X[1:3]
+    @test val ≈ 1 rtol=1e-2
+    @test err < 1e-2
+
     empty!(X)
     val, err = extrapolate(-1.0, rtol=1e-10, contract=0.1) do x
         push!(X, x)
