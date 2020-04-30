@@ -108,6 +108,8 @@ x = 0.000244140625
 ```
 which converged to machine precision (in fact, the exactly rounded result) in only 5 function evaluations (1 fewer than above).
 
+### Infinite limits
+
 Using the `x0` keyword argument, we can compute the limit of `f(x)`
 as `x ⟶ x0`.  In fact, you can pass `x0 = Inf` to compute a limit as
 `x ⟶ ∞` (which is accomplished internally by a change of variables `x = 1/u` and performing Richardson extrapolation to `u=0`). For example:
