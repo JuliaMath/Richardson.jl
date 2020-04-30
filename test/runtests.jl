@@ -74,4 +74,9 @@ using Richardson, Test, LinearAlgebra
     end
     @test val ≈ 1 rtol=1e-12
     @test err < 1e-8
+
+    # extrapolation for complex arguments
+    val, err = extrapolate(sin, 1+2im, x0=4+5im)
+    @test err < abs(val)*1e-8
+    @test val ≈ sin(4+5im) rtol=1e-12
 end

@@ -158,7 +158,7 @@ Another possibility for a finite-difference/Richardson combination was suggested
 
 ```jl
 # returns (f'(x), f''(x))
-function riddersderiv2(f, x, h; atol=0, rtol=atol>0 ? 0 : sqrt(eps(typeof(float(x+h)))), contract=0.5)
+function riddersderiv2(f, x, h; atol=0, rtol=atol>0 ? 0 : sqrt(eps(typeof(float(real(x+h))))), contract=0.5)
     f₀ = f(x)
     val, err = extrapolate(h, atol=atol, rtol=rtol, contract=contract, power=2) do h
         f₊, f₋ = f(x+h), f(x-h)
@@ -167,6 +167,7 @@ function riddersderiv2(f, x, h; atol=0, rtol=atol>0 ? 0 : sqrt(eps(typeof(float(
     return val[1], val[2]
 end
 ```
+The default
 (This code could be made even more efficient by using [StaticArrays.jl](https://github.com/JuliaArrays/StaticArrays.jl) for the `[f', f'']` vector.)   The original paper by Ridders accomplishes something similar in `< 20` lines of [TI-59 calculator](https://en.wikipedia.org/wiki/TI-59_/_TI-58) code, by the way; so much for high-level languages!
 
 For example,

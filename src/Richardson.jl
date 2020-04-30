@@ -63,7 +63,7 @@ so that its Taylor series containsonly *even* powers of `h`,
 you can accelerate convergence by passing `power=2`.
 """
 function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=zero(h_), power::Number=1,
-                     atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(h_))) : sqrt(eps(typeof(one(float(h_))))), maxeval=typemax(Int))
+                     atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))), maxeval=typemax(Int))
     if isinf(x0)
         # use a change of variables x = 1/u
         return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, maxeval=maxeval, contract = contract > 1 ? inv(contract) : contract, x0=inv(x0), power=power)
