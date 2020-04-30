@@ -158,9 +158,9 @@ Another possibility for a finite-difference/Richardson combination was suggested
 
 ```jl
 # returns (f'(x), f''(x))
-function riddersderiv2(f, x, h; atol=0, rtol=atol>0 ? 0 : sqrt(eps(typeof(float(x+h)))))
+function riddersderiv2(f, x, h; atol=0, rtol=atol>0 ? 0 : sqrt(eps(typeof(float(x+h)))), contract=0.5)
     f₀ = f(x)
-    val, err = extrapolate(h, atol=atol, rtol=rtol, power=2) do h
+    val, err = extrapolate(h, atol=atol, rtol=rtol, contract=contract, power=2) do h
         f₊, f₋ = f(x+h), f(x-h)
         [(f₊-f₋)/2h, (f₊-2f₀+f₋)/h^2]
     end
@@ -178,14 +178,14 @@ julia> riddersderiv2(1, 0.1, rtol=0) do x
 x = 1
 x = 1.1
 x = 0.9
+x = 1.05
+x = 0.95
+x = 1.025
+x = 0.975
 x = 1.0125
 x = 0.9875
-x = 1.0015625
-x = 0.9984375
-x = 1.0001953125
-x = 0.9998046875
-x = 1.0000244140625
-x = 0.9999755859375
-(0.5403023058682853, -0.8414709850932097)
+x = 1.00625
+x = 0.99375
+(0.5403023058681394, -0.841470984807975)
 ```
-evaluates the first and second derivatives of `sin(x)` at `x=1` and obtains the correct answer `(cos(1), -sin(1))` to at least 12 and 9 decimal digits, respectively, using 11 function evaluations.
+evaluates the first and second derivatives of `sin(x)` at `x=1` and obtains the correct answer `(cos(1), -sin(1))` to about 15 and 13 decimal digits, respectively, using 11 function evaluations.
