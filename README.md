@@ -72,7 +72,7 @@ x = 0.000244140625
 x = 3.0517578125e-5
 (1.0000000000000002, 2.0838886172214188e-13)
 ```
-That is, it evaluates our function `sin(x)/x` for 5 differnet values of `x` and returns `1.0000000000000002`, which is accurate to machine precision (the error is `≈ 2.2e-16`).  The returned error estimate of `2e-13` is conservative, which is typical for extrapolating well-behaved functions.
+That is, it evaluates our function `sin(x)/x` for 5 different values of `x` and returns `1.0000000000000002`, which is accurate to machine precision (the error is `≈ 2.2e-16`).  The returned error estimate of `2e-13` is conservative, which is typical for extrapolating well-behaved functions.
 
 A classic use of Richardson extrapolation is accurately evaluating derivatives via [finite-difference approximations](https://en.wikipedia.org/wiki/Finite_difference) (although analytical derivatives, e.g. by automatic differentiation, are of course vastly more efficient when they are available).   In this example, we use Richardson extrapolation on the forward-difference approximation `f'(x) ≈ (f(x+h)-f(x))/h`, for which the error decreases as `O(h)` but a naive application to a very small `h` will yield a huge [cancellation error](https://en.wikipedia.org/wiki/Loss_of_significance) from floating-point roundoff effects.   We differentiate `f(x)=sin(x)` at `x=1`, for which the correct answer is `cos(1) ≈ 0.5403023058681397174009366...`, starting with `h=0.1`
 ```jl
