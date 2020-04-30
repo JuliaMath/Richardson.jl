@@ -54,4 +54,11 @@ using Richardson, Test, LinearAlgebra
     @test err < 1e-7
     @test val isa Float32
     @test err isa Float32
+
+    # extrapolation in a vector space
+    val, err = extrapolate([0.1,-0.2],x0=[0.0,1.0]) do x
+        sin(x[1])/x[1]*log(x[2])/(x[2]-1)
+    end
+    @test val ≈ 1 rtol=1e-12
+    @test err < 1e-8
 end

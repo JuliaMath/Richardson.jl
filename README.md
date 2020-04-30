@@ -17,18 +17,27 @@ that `f(x)` is analytic (has a Taylor series) around `x0`.   (See e.g. [these co
 ## Usage
 
 ```jl
-extrapolate(f, h; rtol=sqrt(ε), atol=0, contract=0.125, x0=0)
+extrapolate(f, h; rtol=sqrt(ε), atol=0, contract=0.125, x0=zero(h))
 ```
 
 Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
-(or `x < x0` if `h < 0`) using Richardson's extrapolation starting at
+(or `x < x0` if `h < 0`) using Richardson extrapolation starting at
 `x=x₀+h`.  It returns a tuple `(f₀, err)` of the estimated `f(x0)`
 and an error estimate.
 
-On each step of Richardson's extrapolation, it shrinks `x-x0` by
+More generally, `h` and `x0` can be in an arbitrary vector space,
+in which case `extrapolate` performs Richardson extrapolation
+of `f(x0+s*h)` to `s=0⁺` (i.e. it takes the limit as `x` goes
+to `x0` along the `h` direction).
+
+On each step of Richardson extrapolation, it shrinks `x-x0` by
 a factor of `contract`, stopping when the estimated error is
-`< max(rtol*f₀, atol)` or when the estimated error starts to
-increase (e.g. due to numerical errors in the computation of `f`).
+`< max(rtol*norm(f₀), atol)`, when the estimated error starts to
+increase (e.g. due to numerical errors in the computation of `f`),
+or when `f` has been evaluated `maxeval` times.   Note that
+if the function may converge to zero, you should probably
+specify a nonzero `atol` (which cannot be set by default
+because it depends on the scale/units of `f`).
 
 If `x0 = ±∞` (`±Inf`), then `extrapolate` computes the limit of
 `f(x)` as `x ⟶ ±∞` using geometrically *increasing* values
