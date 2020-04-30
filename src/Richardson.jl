@@ -69,7 +69,7 @@ function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=zero(h_), p
     end
     (rtol ≥ 0 && atol ≥ 0) || throw(ArgumentError("rtol and atol must be nonnegative"))
     0 < contract < 1 || throw(ArgumentError("contract must be in (0,1)"))
-    h = float(x0+h_)
+    h = oftype(float(x0+h_), h_)
     invcontract = inv(contract)^power
     neville = [f(x0+h)] # the current diagonal of the Neville tableau
     f₀ = neville[1]
