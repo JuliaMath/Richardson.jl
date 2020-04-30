@@ -19,7 +19,7 @@ export extrapolate
 
 """
     extrapolate(f, h; contract=0.125, x0=zero(h), power=1,
-                      rtol=sqrt(ε), atol=0, maxeval=typemax(Int))
+                      atol=0, rtol=atol>0 ? 0 : sqrt(ε), maxeval=typemax(Int))
 
 Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
 (or `x < x0` if `h < 0`) using Richardson extrapolation starting at
@@ -62,7 +62,7 @@ so that its Taylor series containsonly *even* powers of `h`,
 you can accelerate convergence by passing `power=2`.
 """
 function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=zero(h_), power::Number=1,
-                     rtol::Real=sqrt(eps(typeof(float(h_)))), atol::Real=0, maxeval=typemax(Int))
+                     atol::Real=0, rtol::Real = atol > 0 ? zero(one(float(h_))) : sqrt(eps(typeof(one(float(h_))))), maxeval=typemax(Int))
     if isinf(x0)
         # use a change of variables x = 1/u
         return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, maxeval=maxeval, contract = contract > 1 ? inv(contract) : contract, x0=inv(x0), power=power)

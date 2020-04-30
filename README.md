@@ -19,7 +19,7 @@ series in `h`.   (See e.g. [these course notes by Prof. Flaherty at RPI](http://
 
 ```jl
 extrapolate(f, h; contract=0.125, x0=zero(h),
-                  rtol=sqrt(ε), atol=0, maxeval=typemax(Int))
+                  atol=0, rtol=atol>0 ? 0 : sqrt(ε), maxeval=typemax(Int))
 ```
 
 Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
