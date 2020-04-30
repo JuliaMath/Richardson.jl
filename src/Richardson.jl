@@ -65,7 +65,7 @@ function extrapolate(f, h_::Number; rtol::Real=sqrt(eps(typeof(float(h_)))), ato
             end
             c *= invcontract
         end
-        minerr′ > 2err && break # stop early if error increases too much
+        (minerr′ > 2err || !isfinite(minerr′)) && break # stop early if error increases too much
         err ≤ max(rtol*f₀, atol) && break # converged
     end
     return (f₀, err)

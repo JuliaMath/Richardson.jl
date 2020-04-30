@@ -29,4 +29,8 @@ using Richardson, Test
     @test val ≈ 1 rtol=1e-12
     @test err < 1e-10
     @test length(X) == 7
+
+    # make sure this terminates rather than looping on NaN values
+    val, err = extrapolate(x -> log(x)/sqrt(x-1), 0.2, x0=1.0)
+    @test abs(val) < 1e-6 && abs(err) < 1e-6
 end
