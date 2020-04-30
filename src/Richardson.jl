@@ -86,6 +86,7 @@ function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=zero(h_),
     return (f₀, err)
 end
 
+# support non-numeric h as long as it is in a vector space
 extrapolate(f, h; x0=zero(h), kws...) =
     extrapolate(s -> f(x0+s*h), one(norm(h)); kws...)
 
