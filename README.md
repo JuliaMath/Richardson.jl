@@ -108,26 +108,6 @@ x = 0.000244140625
 ```
 which converged to machine precision (in fact, the exactly rounded result) in only 5 function evaluations (1 fewer than above).
 
-A classic use of Richardson extrapolation is accurately evaluating derivatives via [finite-difference approximations](https://en.wikipedia.org/wiki/Finite_difference) (although analytical derivatives, e.g. by automatic differentiation, are of course vastly more efficient when they are available); a classic description of this combination is found in [Ridders (1982)](https://www.sciencedirect.com/science/article/abs/pii/S0141119582800570).   In this example, we use Richardson extrapolation on the forward-difference approximation `f'(x) ≈ (f(x+h)-f(x))/h`, for which the error decreases as `O(h)` but a naive application to a very small `h` will yield a huge [cancellation error](https://en.wikipedia.org/wiki/Loss_of_significance) from floating-point roundoff effects.   We differentiate `f(x)=sin(x)` at `x=1`, for which the correct answer is `cos(1) ≈ 0.5403023058681397174009366...`, starting with `h=0.1`
-```jl
-extrapolate(0.1, rtol=0) do h
-    @show h
-    (sin(1+h) - sin(1)) / h
-end
-```
-Although we gave an `rtol` of `0`, the `extrapolate` function will terminate after a finite number of steps when it detects that improvements are limited by floating-point error:
-```
-h = 0.1
-h = 0.0125
-h = 0.0015625
-h = 0.0001953125
-h = 2.44140625e-5
-h = 3.0517578125e-6
-(0.5403023058683176, 1.7075230118734908e-12)
-```
-The output `0.5403023058683176` differs from `cos(1)` by `≈ 1.779e-13`, so in this case the returned error estimate is only a little conservative.   Unlike the previous example, `extrapolate` is not able
-to attain machine precision (the floating-point cancellation error in this function is quite severe for small `h`!), but it is able to get surprisingly close.
-
 Using the `x0` keyword argument, we can compute the limit of `f(x)`
 as `x ⟶ x0`.  In fact, you can pass `x0 = Inf` to compute a limit as
 `x ⟶ ∞` (which is accomplished internally by a change of variables `x = 1/u` and performing Richardson extrapolation to `u=0`). For example:
@@ -149,3 +129,61 @@ x = 262144.0
 (1.0000000000000002, 1.2938539128981574e-12)
 ```
 which is the correct result (`1.0`) to machine precision.
+
+### Numerical derivatives
+
+A classic use of Richardson extrapolation is accurately evaluating derivatives via [finite-difference approximations](https://en.wikipedia.org/wiki/Finite_difference) (although analytical derivatives, e.g. by automatic differentiation, are of course vastly more efficient when they are available).  In this example, we use Richardson extrapolation on the forward-difference approximation `f'(x) ≈ (f(x+h)-f(x))/h`, for which the error decreases as `O(h)` but a naive application to a very small `h` will yield a huge [cancellation error](https://en.wikipedia.org/wiki/Loss_of_significance) from floating-point roundoff effects.   We differentiate `f(x)=sin(x)` at `x=1`, for which the correct answer is `cos(1) ≈ 0.5403023058681397174009366...`, starting with `h=0.1`
+```jl
+extrapolate(0.1, rtol=0) do h
+    @show h
+    (sin(1+h) - sin(1)) / h
+end
+```
+Although we gave an `rtol` of `0`, the `extrapolate` function will terminate after a finite number of steps when it detects that improvements are limited by floating-point error:
+```
+h = 0.1
+h = 0.0125
+h = 0.0015625
+h = 0.0001953125
+h = 2.44140625e-5
+h = 3.0517578125e-6
+(0.5403023058683176, 1.7075230118734908e-12)
+```
+The output `0.5403023058683176` differs from `cos(1)` by `≈ 1.779e-13`, so in this case the returned error estimate is only a little conservative.   Unlike the `sin(x)/x` example, `extrapolate` is not able
+to attain machine precision (the floating-point cancellation error in this function is quite severe for small `h`!), but it is able to get surprisingly close.
+
+Another possibility for a finite-difference/Richardson combination was suggested by [Ridders (1982)](https://www.sciencedirect.com/science/article/abs/pii/S0141119582800570), who computed both `f'(x)` and `f''(x)` (the first and second derivatives) simultaneously using a center-difference approximation, which requires two new `f(x)` evaluations for each `h`.  In particular, the center-difference approximations are `f'(x) ≈ (f(x+h)-f(x-h))/2h` and `f''(x) ≈ (f(x+h)-2f(x)+f(x-h))/h²`, both of which have errors that go as `O(h²)`.   We can plug both of these functions *simultaneously* into `extrapolate` (so that they share `f(x±h)` evaluations) by using a vector-valued function returning `[f', f'']`.   Moreover, since these center-difference approximations are even functions of `h` (identical for `±h`), we can pass `power=2` to `extrapolate` in order to exploit the even-power Taylor expansion.  Here is a function implementing both of these ideas:
+
+```jl
+# returns (f'(x), f''(x))
+function ridderderiv2(f, x, h; atol=0, rtol=atol>0 ? 0 : sqrt(eps(typeof(float(x+h)))))
+    f₀ = f(x)
+    val, err = extrapolate(h, atol=atol, rtol=rtol, power=2) do h
+        f₊, f₋ = f(x+h), f(x-h)
+        [(f₊-f₋)/2h, (f₊-2f₀+f₋)/h^2]
+    end
+    return val[1], val[2]
+end
+```
+(This code could be made even more efficient by using [StaticArrays.jl](https://github.com/JuliaArrays/StaticArrays.jl) for the `[f', f'']` vector.)   The original paper by Ridders accomplishes something similar in `< 20` lines of [TI-59 calculator](https://en.wikipedia.org/wiki/TI-59_/_TI-58) code, by the way; so much for high-level languages!
+
+For example,
+```jl
+julia> ridderderiv2(1, 0.1, rtol=0) do x
+           @show x
+           sin(x)
+       end
+x = 1
+x = 1.1
+x = 0.9
+x = 1.0125
+x = 0.9875
+x = 1.0015625
+x = 0.9984375
+x = 1.0001953125
+x = 0.9998046875
+x = 1.0000244140625
+x = 0.9999755859375
+(0.5403023058682853, -0.8414709850932097)
+```
+evaluates the first and second derivatives of `sin(x)` at `x=1` and obtains the correct answer `(cos(1), -sin(1))` to at least 12 and 9 decimal digits, respectively, using 11 function evaluations.
