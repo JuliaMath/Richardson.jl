@@ -20,6 +20,15 @@ using Richardson, Test, LinearAlgebra
     @test val ≈ 1 rtol=1e-2
     @test err < 1e-2
 
+    empty!(X2)
+    val, err = extrapolate(1.0, rtol=1e-13, contract=0.1, power=2) do x
+        push!(X2, x)
+        sin(x)/x
+    end
+    @test X2 == X[1:5]
+    @test val ≈ 1 rtol=1e-13
+    @test err < 1e-13
+
     empty!(X)
     val, err = extrapolate(-1.0, rtol=1e-10, contract=0.1) do x
         push!(X, x)
@@ -42,6 +51,10 @@ using Richardson, Test, LinearAlgebra
     # make sure this terminates rather than looping on NaN values
     val, err = extrapolate(x -> log(x)/sqrt(x-1), 0.2, x0=1.0)
     @test abs(val) < 1e-6 && abs(err) < 1e-6
+
+    # rapid convergence via Puiseaux series:
+    val, err = extrapolate(x -> log(x)/sqrt(x-1), 0.2, x0=1.0, power=0.5)
+    @test abs(val) < 1e-12 && abs(err) < 1e-12
 
     # vector-valued function support
     val, err = extrapolate(x -> [sin(x)/x, cos(x)], 0.1, rtol=1e-10)

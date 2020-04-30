@@ -12,7 +12,8 @@ tableau, which adaptively increases the degree of an extrapolation
 polynomial until convergence is achieved to a desired tolerance
 (or convergence stalls due to e.g. floating-point errors).  This
 allows one to obtain `f(x0)` to high-order accuracy, assuming
-that `f(x)` is analytic (has a Taylor series) around `x0`.   (See e.g. [these course notes by Prof. Flaherty at RPI](http://www.cs.rpi.edu/~flaherje/pdf/ode4.pdf).)
+that `f(x)` is analytic (has a Taylor series or some other power
+series) around `x0`.   (See e.g. [these course notes by Prof. Flaherty at RPI](http://www.cs.rpi.edu/~flaherje/pdf/ode4.pdf).)
 
 ## Usage
 
@@ -50,6 +51,17 @@ severe cancellation errors), but small enough that `f` does not
 oscillate much between `x0` and `h`.  i.e. `h` should be a typical
 scale over which the function `f` varies significantly.
 
+Technically, Richardson extrapolation assumes that `f(x0+h)` can
+be expanded in a power series in `h^power`, where the default
+`power=1` corresponds to an ordinary Taylor series (i.e. assuming
+`f` is analytic at `x0`).  If this is not true, you may obtain
+slow convergence from `extrapolate`, but you can pass a different
+value of `power` (e.g. `power=0.5`) if your `f` has some different
+(Puiseux) power-series expansion.   Conversely, if `f` is
+an *even* function around `x0`, i.e. `f(x0+h) == f(x0-h)`,
+so that its Taylor series containsonly *even* powers of `h`,
+you can accelerate convergence by passing `power=2`.
+
 ## Examples
 
 For example, let's extrapolate `sin(x)/x` to `x=0` (where the correct answer is `1`) starting at `x=1`, printing out the `x` value at each step so that we can see what the algorithm is doing.
@@ -73,7 +85,28 @@ x = 0.000244140625
 x = 3.0517578125e-5
 (1.0000000000000002, 2.0838886172214188e-13)
 ```
-That is, it evaluates our function `sin(x)/x` for 5 different values of `x` and returns `1.0000000000000002`, which is accurate to machine precision (the error is `≈ 2.2e-16`).  The returned error estimate of `2e-13` is conservative, which is typical for extrapolating well-behaved functions.
+That is, it evaluates our function `sin(x)/x` for 6 different values of `x` and returns `1.0000000000000002`, which is accurate to machine precision (the error is `≈ 2.2e-16`).  The returned error estimate of `2e-13` is conservative, which is typical for extrapolating well-behaved functions.
+
+Since `sin(x)/x` is an *even* (symmetric) function around `x=0`,
+its Taylor series contains only even powers of `x`.  We can
+exploit this fact to *accelerate convergence for even functions* by
+passing `power=2` to `extrapolate`:
+```jl
+extrapolate(1.0, rtol=1e-10, power=2) do x
+    @show x
+    sin(x)/x
+end
+```
+gives
+```
+x = 1.0
+x = 0.125
+x = 0.015625
+x = 0.001953125
+x = 0.000244140625
+(1.0, 0.0)
+```
+which converged to machine precision (in fact, the exactly rounded result) in only 5 function evaluations (1 fewer than above).
 
 A classic use of Richardson extrapolation is accurately evaluating derivatives via [finite-difference approximations](https://en.wikipedia.org/wiki/Finite_difference) (although analytical derivatives, e.g. by automatic differentiation, are of course vastly more efficient when they are available).   In this example, we use Richardson extrapolation on the forward-difference approximation `f'(x) ≈ (f(x+h)-f(x))/h`, for which the error decreases as `O(h)` but a naive application to a very small `h` will yield a huge [cancellation error](https://en.wikipedia.org/wiki/Loss_of_significance) from floating-point roundoff effects.   We differentiate `f(x)=sin(x)` at `x=1`, for which the correct answer is `cos(1) ≈ 0.5403023058681397174009366...`, starting with `h=0.1`
 ```jl
