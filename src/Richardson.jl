@@ -13,6 +13,8 @@ that `f(x)` is analytic (has a Taylor series) around `x0`.
 """
 module Richardson
 
+using LinearAlgebra
+
 export extrapolate
 
 """
@@ -49,7 +51,7 @@ function extrapolate(f, h_::Number; rtol::Real=sqrt(eps(typeof(float(h_)))), ato
     invcontract = inv(contract)
     neville = [f(x0+h)] # the current diagonal of the Neville tableau
     f₀ = neville[1]
-    err = oftype(abs(f₀), Inf)
+    err = oftype(norm(f₀), Inf)
     while true
         h *= contract
         push!(neville, f(x0+h))
@@ -58,7 +60,7 @@ function extrapolate(f, h_::Number; rtol::Real=sqrt(eps(typeof(float(h_)))), ato
         for i = length(neville)-1:-1:1
             old = neville[i]
             neville[i] = neville[i+1] + (neville[i+1] - neville[i]) / (c - 1)
-            err′ = abs(neville[i] - old)
+            err′ = norm(neville[i] - old)
             minerr′ = min(minerr′, err′)
             if err′ < err
                 f₀, err = neville[i], err′
@@ -66,7 +68,7 @@ function extrapolate(f, h_::Number; rtol::Real=sqrt(eps(typeof(float(h_)))), ato
             c *= invcontract
         end
         (minerr′ > 2err || !isfinite(minerr′)) && break # stop early if error increases too much
-        err ≤ max(rtol*f₀, atol) && break # converged
+        err ≤ max(rtol*norm(f₀), atol) && break # converged
     end
     return (f₀, err)
 end

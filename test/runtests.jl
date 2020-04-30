@@ -1,4 +1,4 @@
-using Richardson, Test
+using Richardson, Test, LinearAlgebra
 
 @testset "basic tests" begin
     X = Float64[]
@@ -33,4 +33,9 @@ using Richardson, Test
     # make sure this terminates rather than looping on NaN values
     val, err = extrapolate(x -> log(x)/sqrt(x-1), 0.2, x0=1.0)
     @test abs(val) < 1e-6 && abs(err) < 1e-6
+
+    # vector-valued function support
+    val, err = extrapolate(x -> [sin(x)/x, cos(x)], 0.1, rtol=1e-10)
+    @test val ≈ [1,1] rtol=1e-10
+    @test err < norm([1,1])*1e-10
 end
