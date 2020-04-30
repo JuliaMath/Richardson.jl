@@ -12,7 +12,7 @@ tableau, which adaptively increases the degree of an extrapolation
 polynomial until convergence is achieved to a desired tolerance
 (or convergence stalls due to e.g. floating-point errors).  This
 allows one to obtain `f(x0)` to high-order accuracy, assuming
-that `f(x0+h)` is has a Taylor series or some other power
+that `f(x0+h)` has a Taylor series or some other power
 series in `h`.   (See e.g. [these course notes by Prof. Flaherty at RPI](http://www.cs.rpi.edu/~flaherje/pdf/ode4.pdf).)
 
 ## Usage
