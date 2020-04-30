@@ -7,7 +7,7 @@ extrapolates a given function `f(x)` to `f(x0)`, evaluating
 `f` only  at a geometric sequence of points `> x0`
 (or optionally `< x0`).
 
-The key algorithm is [Richardson extrapolation](https://en.wikipedia.org/wiki/Richardson_extrapolation) using a Neville—Aitken
+The key algorithm is [Richardson extrapolation](https://en.wikipedia.org/wiki/Richardson_extrapolation) using a Neville–Aitken
 tableau, which adaptively increases the degree of an extrapolation
 polynomial until convergence is achieved to a desired tolerance
 (or convergence stalls due to e.g. floating-point errors).  This
