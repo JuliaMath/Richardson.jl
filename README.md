@@ -17,7 +17,8 @@ that `f(x)` is analytic (has a Taylor series) around `x0`.   (See e.g. [these co
 ## Usage
 
 ```jl
-extrapolate(f, h; rtol=sqrt(ε), atol=0, contract=0.125, x0=zero(h))
+extrapolate(f, h; contract=0.125, x0=zero(h),
+                  rtol=sqrt(ε), atol=0, maxeval=typemax(Int))
 ```
 
 Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
