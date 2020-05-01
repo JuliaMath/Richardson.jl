@@ -48,7 +48,7 @@ of `h` (by factors of `1/contract`).
 In general, the starting `h` should be large enough that `f(x0+h)`
 can be computed accurately and efficiently (e.g. without
 severe cancellation errors), but small enough that `f` does not
-oscillate much between `x0` and `h`.  i.e. `h` should be a typical
+oscillate much between `x0` and `x0+h`.  i.e. `h` should be a typical
 scale over which the function `f` varies significantly.
 
 Technically, Richardson extrapolation assumes that `f(x0+h)` can

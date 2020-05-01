@@ -59,7 +59,7 @@ slow convergence from `extrapolate`, but you can pass a different
 value of `power` (e.g. `power=0.5`) if your `f` has some different
 (Puiseux) power-series expansion.   Conversely, if `f` is
 an *even* function around `x0`, i.e. `f(x0+h) == f(x0-h)`,
-so that its Taylor series containsonly *even* powers of `h`,
+so that its Taylor series contains only *even* powers of `h`,
 you can accelerate convergence by passing `power=2`.
 """
 function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=zero(h_), power::Number=1,
