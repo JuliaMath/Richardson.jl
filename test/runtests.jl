@@ -79,4 +79,9 @@ using Richardson, Test, LinearAlgebra
     val, err = extrapolate(sin, 1+2im, x0=4+5im)
     @test err < abs(val)*1e-8
     @test val ≈ sin(4+5im) rtol=1e-12
+
+    # extrapolation for real arguments with complex contraction (spirals inwards)
+    val, err = extrapolate(sin, 1, x0=4, contract = 0.5 + 0.5im)
+    @test err < abs(val)*1e-8
+    @test val ≈ sin(4) rtol=1e-10
 end

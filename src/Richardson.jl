@@ -62,23 +62,23 @@ an *even* function around `x0`, i.e. `f(x0+h) == f(x0-h)`,
 so that its Taylor series contains only *even* powers of `h`,
 you can accelerate convergence by passing `power=2`.
 """
-function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=zero(h_), power::Number=1,
+function extrapolate(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.125), x0::Number=zero(h_), power::Number=1,
                      atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))), maxeval=typemax(Int))
     if isinf(x0)
         # use a change of variables x = 1/u
-        return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, maxeval=maxeval, contract = contract > 1 ? inv(contract) : contract, x0=inv(x0), power=power)
+        return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, maxeval=maxeval, contract = abs(contract) > 1 ? inv(contract) : contract, x0=inv(x0), power=power)
     end
     (rtol ≥ 0 && atol ≥ zero(atol)) || throw(ArgumentError("rtol and atol must be nonnegative"))
-    0 < contract < 1 || throw(ArgumentError("contract must be in (0,1)"))
-    h = oftype(float(x0+h_), h_)
+    0 < abs(contract) < 1 || throw(ArgumentError("contract must be in (0,1)"))
+    h::typeof(float(x0+h_*contract)) = h_
     invcontract = inv(contract)^power
     neville = [f(x0+h)] # the current diagonal of the Neville tableau
     f₀ = neville[1]
-    err = oftype(norm(f₀), Inf)
+    err::typeof(float(norm(f₀))) = Inf
     numeval = 1
     while numeval < maxeval
         numeval += 1
-        h = oftype(h, h * contract)
+        h *= contract
         push!(neville, f(x0+h))
         c = invcontract
         minerr′ = oftype(err, Inf)
@@ -88,7 +88,7 @@ function extrapolate(f, h_::Number; contract::Real=0.125, x0::Number=zero(h_), p
             err′ = norm(neville[i] - old)
             minerr′ = min(minerr′, err′)
             if err′ < err
-                f₀, err = neville[i], oftype(err, err′)
+                f₀, err = neville[i], err′
             end
             c *= invcontract
         end
