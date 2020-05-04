@@ -29,7 +29,7 @@ and an error estimate.
 
 The return value of `f` can be any type supporting `±` and `norm`
 operations (i.e. a normed vector space).
-More generally, `h` and `x0` can be in any normed vector space,
+Similarly, `h` and `x0` can be in any normed vector space,
 in which case `extrapolate` performs Richardson extrapolation
 of `f(x0+s*h)` to `s=0⁺` (i.e. it takes the limit as `x` goes
 to `x0` along the `h` direction).
