@@ -84,4 +84,12 @@ using Richardson, Test, LinearAlgebra
     val, err = extrapolate(sin, 1, x0=4, contract = 0.5 + 0.5im)
     @test err < abs(val)*1e-8
     @test val ≈ sin(4) rtol=1e-10
+
+    # compare to some known results
+    val, err = extrapolate(x -> sin(x)/x, 1, contract=0.5, maxeval=4)
+    @test 1 - val ≈ 0.0001228230317512624
+    @test err ≈ 0.001886562265816072
+    val, err = extrapolate(x -> sin(x)/x, 1, contract=0.5, maxeval=4, power=2)
+    @test 1 - val ≈ 6.647181693963944e-10
+    @test err ≈ 3.0435620007596143e-6
 end
