@@ -27,7 +27,9 @@ Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
 `x=x₀+h`.  It returns a tuple `(f₀, err)` of the estimated `f(x0)`
 and an error estimate.
 
-More generally, `h` and `x0` can be in an arbitrary vector space,
+The return value of `f` can be any type supporting `±` and `norm`
+operations (i.e. a normed vector space).
+More generally, `h` and `x0` can be in any normed vector space,
 in which case `extrapolate` performs Richardson extrapolation
 of `f(x0+s*h)` to `s=0⁺` (i.e. it takes the limit as `x` goes
 to `x0` along the `h` direction).

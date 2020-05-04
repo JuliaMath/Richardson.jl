@@ -27,7 +27,9 @@ Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
 `x=x₀+h`.  It returns a tuple `(f₀, err)` of the estimated `f(x0)`
 and an error estimate.
 
-More generally, `h` and `x0` can be in an arbitrary vector space,
+The return value of `f` can be any type supporting `±` and `norm`
+operations (i.e. a normed vector space).
+More generally, `h` and `x0` can be in any normed vector space,
 in which case `extrapolate` performs Richardson extrapolation
 of `f(x0+s*h)` to `s=0⁺` (i.e. it takes the limit as `x` goes
 to `x0` along the `h` direction).
@@ -134,7 +136,7 @@ which is the correct result (`1.0`) to machine precision.
 
 ### Numerical derivatives
 
-A classic use of Richardson extrapolation is accurately evaluating derivatives via [finite-difference approximations](https://en.wikipedia.org/wiki/Finite_difference) (although analytical derivatives, e.g. by automatic differentiation, are of course vastly more efficient when they are available).  In this example, we use Richardson extrapolation on the forward-difference approximation `f'(x) ≈ (f(x+h)-f(x))/h`, for which the error decreases as `O(h)` but a naive application to a very small `h` will yield a huge [cancellation error](https://en.wikipedia.org/wiki/Loss_of_significance) from floating-point roundoff effects.   We differentiate `f(x)=sin(x)` at `x=1`, for which the correct answer is `cos(1) ≈ 0.5403023058681397174009366...`, starting with `h=0.1`
+A classic application of Richardson extrapolation is the accurate evaluation of derivatives via [finite-difference approximations](https://en.wikipedia.org/wiki/Finite_difference) (although analytical derivatives, e.g. by automatic differentiation, are of course vastly more efficient when they are available).  In this example, we use Richardson extrapolation on the forward-difference approximation `f'(x) ≈ (f(x+h)-f(x))/h`, for which the error decreases as `O(h)` but a naive application to a very small `h` will yield a huge [cancellation error](https://en.wikipedia.org/wiki/Loss_of_significance) from floating-point roundoff effects.   We differentiate `f(x)=sin(x)` at `x=1`, for which the correct answer is `cos(1) ≈ 0.5403023058681397174009366...`, starting with `h=0.1`
 ```jl
 extrapolate(0.1, rtol=0) do h
     @show h
