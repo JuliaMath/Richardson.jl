@@ -39,9 +39,11 @@ a factor of `contract`, stopping when the estimated error is
 `< max(rtol*norm(f₀), atol)`, when the estimated error starts to
 increase (e.g. due to numerical errors in the computation of `f`),
 or when `f` has been evaluated `maxeval` times.   Note that
-if the function may converge to zero, you should probably
+if the function may converge to zero, you may want
 specify a nonzero `atol` (which cannot be set by default
-because it depends on the scale/units of `f`).
+because it depends on the scale/units of `f`); alternatively,
+in such cases `extrapolate` will halt when it becomes
+limited by the floating-point precision.
 
 If `x0 = ±∞` (`±Inf`), then `extrapolate` computes the limit of
 `f(x)` as `x ⟶ ±∞` using geometrically *increasing* values
