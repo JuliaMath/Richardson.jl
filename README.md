@@ -157,7 +157,7 @@ julia> sum(n -> 1/n^2, 1:10^9) - π^2/6
 ```
 Even with 10⁹ terms we get only about 9 digits.   Instead, we can use `extrapolate` (starting at 1 term):
 ```jl
-julia> val, err = extrapolate(1, x0=Inf, rtol=0) do N
+julia> val, err = extrapolate(1, x0=Inf) do N
            @show N
            sum(n -> 1/n^2, 1:Int(N))
        end
@@ -167,12 +167,10 @@ N = 64.0
 N = 512.0
 N = 4096.0
 N = 32768.0
-N = 262144.0
-N = 2.097152e6
-(1.644934066848228, 0.0)
+(1.6449340668482288, 4.384936858059518e-12)
 
-julia> val - π^2/6
-1.5543122344752192e-15
+julia> (val - π^2/6)/(pi^2/6)
+1.4848562646983628e-15
 ```
 By `32768` terms, the extrapolated value is accurate to about 15 digits.
 
