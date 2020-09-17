@@ -20,7 +20,8 @@ export extrapolate
 
 """
     extrapolate(f, h; contract=0.125, x0=zero(h), power=1,
-                      atol=0, rtol=atol>0 ? 0 : sqrt(ε), maxeval=typemax(Int))
+                      atol=0, rtol=atol>0 ? 0 : sqrt(ε), maxeval=typemax(Int),
+                      breaktol=2)
 
 Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
 (or `x < x0` if `h < 0`) using Richardson extrapolation starting at
@@ -36,14 +37,18 @@ to `x0` along the `h` direction).
 
 On each step of Richardson extrapolation, it shrinks `x-x0` by
 a factor of `contract`, stopping when the estimated error is
-`< max(rtol*norm(f₀), atol)`, when the estimated error starts to
-increase (e.g. due to numerical errors in the computation of `f`),
-or when `f` has been evaluated `maxeval` times.   Note that
+`< max(rtol*norm(f₀), atol)`, when the estimated error
+increases by more than `breaktol` (e.g. due to numerical errors in the
+computation of `f`), when `f` returns a non-finite value (`NaN` or `Inf`),
+ or when `f` has been evaluated `maxeval` times.   Note that
 if the function may converge to zero, you may want
 specify a nonzero `atol` (which cannot be set by default
 because it depends on the scale/units of `f`); alternatively,
 in such cases `extrapolate` will halt when it becomes
-limited by the floating-point precision.
+limited by the floating-point precision.   (Passing `breaktol=Inf`
+can be useful to force `extrapolate` to continue shrinking `h` even
+if polynomial extrapolation is initially failing to converge,
+possibly at the cost of extraneous function evaluations.)
 
 If `x0 = ±∞` (`±Inf`), then `extrapolate` computes the limit of
 `f(x)` as `x ⟶ ±∞` using geometrically *increasing* values
@@ -67,12 +72,14 @@ so that its Taylor series contains only *even* powers of `h`,
 you can accelerate convergence by passing `power=2`.
 """
 function extrapolate(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.125), x0::Number=zero(h_), power::Number=1,
-                     atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))), maxeval=typemax(Int))
+                     atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))), maxeval=typemax(Int),
+                     breaktol::Real=2)
     if isinf(x0)
         # use a change of variables x = 1/u
         return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, maxeval=maxeval, contract = abs(contract) > 1 ? inv(contract) : contract, x0=inv(x0), power=power)
     end
     (rtol ≥ 0 && atol ≥ zero(atol)) || throw(ArgumentError("rtol and atol must be nonnegative"))
+    breaktol > 0 || throw(ArgumentError("breaktol must be positive"))
     0 < abs(contract) < 1 || throw(ArgumentError("contract must be in (0,1)"))
     h::typeof(float(x0+h_*contract)) = h_
     invcontract = inv(contract)^power
@@ -96,7 +103,7 @@ function extrapolate(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.1
             end
             c *= invcontract
         end
-        (minerr′ > 2err || !isfinite(minerr′)) && break # stop early if error increases too much
+        (minerr′ > breaktol*err || !isfinite(minerr′)) && break # stop early if error increases too much
         err ≤ max(rtol*norm(f₀), atol) && break # converged
     end
     return (f₀, err)

@@ -92,4 +92,10 @@ using Richardson, Test, LinearAlgebra
     val, err = extrapolate(x -> sin(x)/x, 1, contract=0.5, maxeval=4, power=2)
     @test 1 - val ≈ 6.647181693963944e-10
     @test err ≈ 3.0435620007596143e-6
+
+    # increase breaktol to fix convergence for functions with poles:
+    @test -10000 ≈ extrapolate(1000.0, breaktol=Inf) do h
+        x = 0.01
+        (1/(x+h) - 1/x) / h
+    end[1]
 end

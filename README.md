@@ -19,7 +19,7 @@ series in `h`.   (See e.g. [these course notes by Prof. Flaherty at RPI](http://
 
 ```jl
 extrapolate(f, h; contract=0.125, x0=zero(h),
-                  atol=0, rtol=atol>0 ? 0 : sqrt(ε), maxeval=typemax(Int))
+                  atol=0, rtol=atol>0 ? 0 : sqrt(ε), maxeval=typemax(Int), breaktol=2)
 ```
 
 Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
@@ -36,14 +36,18 @@ to `x0` along the `h` direction).
 
 On each step of Richardson extrapolation, it shrinks `x-x0` by
 a factor of `contract`, stopping when the estimated error is
-`< max(rtol*norm(f₀), atol)`, when the estimated error starts to
-increase (e.g. due to numerical errors in the computation of `f`),
-or when `f` has been evaluated `maxeval` times.   Note that
+`< max(rtol*norm(f₀), atol)`, when the estimated error
+increases by more than `breaktol` (e.g. due to numerical errors in the
+computation of `f`), when `f` returns a non-finite value (`NaN` or `Inf`),
+ or when `f` has been evaluated `maxeval` times.   Note that
 if the function may converge to zero, you may want
 specify a nonzero `atol` (which cannot be set by default
 because it depends on the scale/units of `f`); alternatively,
 in such cases `extrapolate` will halt when it becomes
-limited by the floating-point precision.
+limited by the floating-point precision.   (Passing `breaktol=Inf`
+can be useful to force `extrapolate` to continue shrinking `h` even
+if polynomial extrapolation is initially failing to converge,
+possibly at the cost of extraneous function evaluations.)
 
 If `x0 = ±∞` (`±Inf`), then `extrapolate` computes the limit of
 `f(x)` as `x ⟶ ±∞` using geometrically *increasing* values
@@ -193,3 +197,73 @@ x = 0.99375
 (0.5403023058681394, -0.841470984807975)
 ```
 evaluates the first and second derivatives of `sin(x)` at `x=1` and obtains the correct answer `(cos(1), -sin(1))` to about 15 and 13 decimal digits, respectively, using 11 function evaluations.
+
+### Handling problematic convergence
+
+It is useful to consider a finite-difference approximation for the derivative of
+the function `1/x` at some `x ≠ 0`: i.e. computing the limit of `f(h) = (1/(x+h) - 1/x) / h`
+as `h` goes to zero similar to above.
+
+This function `f(h)` has a [pole](https://en.wikipedia.org/wiki/Zeros_and_poles) at `h=-x`, i.e. `f(-x)` blows up.   This means
+that the Taylor series of `f(h)` [only converges](https://en.wikipedia.org/wiki/Radius_of_convergence) for `h` values small enough to avoid this pole, and in
+fact for `|h| < |x|`.   Since Richardson extrapolation is essentially
+approximating the Taylor series, this means that the extrapolation process doesn't
+converge if the starting `h` is too large, and `extrapolation` will give up and
+halt with the wrong answer.
+
+This lack of convergence is easily observed: set `x=0.01` (where the correct derivative of `1/x` is `-10000`) and consider what happens for a starting `h`
+that is too large compared to `|x|`:
+```jl
+julia> extrapolate(1.0) do h
+           @show h
+           x = 0.01
+           (1/(x+h) - 1/x) / h
+       end
+h = 1.0
+h = 0.125
+h = 0.015625
+(-832.4165749908325, 733.4066740007335)
+```
+Before reached an `|h| < 0.01` where the power series could begin to converge, `extrapolate` gave up and returned a wrong answer (with a large error estimate to let you know that the result is garbage)!   In contrast, if we start with a small enough `h` then it converges just fine and returns the correct answer (`-10000`) to nearly machine precision:
+```jl
+julia> extrapolate(0.01) do h
+           @show h
+           x = 0.01
+           (1/(x+h) - 1/x) / h
+       end
+h = 0.01
+h = 0.00125
+h = 0.00015625
+h = 1.953125e-5
+h = 2.44140625e-6
+h = 3.0517578125e-7
+(-10000.000000000211, 4.066770998178981e-6)
+```
+
+Of course, if you know that your function blows up like this, it is easy to choose good initial `h`, but how can we persuade `extrapolate` to do a better job automatically?
+
+The trick is to use the `breaktol` keyword argument.  `breaktol` defaults to `2`,
+which means that `extrapolate` gives up if the best error estimate increases by
+more than a factor of 2 from one iteration to the next.  Ordinarily, this
+kind of breakdown in convergence arises because you hit the limits of floating-point precision, and halting extrapolation is the right thing to do.  Here, however, it would converge if we just continued shrinking `h`.   So, we simply set `breaktol=Inf` to force extrapolation to continue, which works even for a large initial `h=1000.0`:
+```jl
+julia> extrapolate(1000.0, breaktol=Inf) do h
+           @show h
+           x = 0.01
+           (1/(x+h) - 1/x) / h
+       end
+h = 1000.0
+h = 125.0
+h = 15.625
+h = 1.953125
+h = 0.244140625
+h = 0.030517578125
+h = 0.003814697265625
+h = 0.000476837158203125
+h = 5.9604644775390625e-5
+h = 7.450580596923828e-6
+h = 9.313225746154785e-7
+h = 1.1641532182693481e-7
+(-10000.000000029328, 5.8616933529265225e-8)
+```
+Not that it continues extrapolating until it reaches small `h` values where the power-series converges, and in the end it again returns the correct answer to nearly machine precision (and would reach machine precision if we set a smaller `rtol`).  (The `extrapolate` function *automatically* discards the initial points where the polynomial extrapolation fails.)
