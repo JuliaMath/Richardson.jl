@@ -140,6 +140,42 @@ x = 262144.0
 ```
 which is the correct result (`1.0`) to machine precision.
 
+#### Extrapolating series
+
+One nice application of infinite limits is extrapolating infinite series.   If we start with an integer `x`, then the default `contract=0.125` will increase `x` by a factor of `8.0` on each iteration, so `x` will always be an exact integer and we can use it as the number of terms in a series.
+
+For example, suppose we are computing the infinite series `1/1² + 1/2² + 1/3² + ⋯`.  This is the famous [Basel problem](https://en.wikipedia.org/wiki/Basel_problem), and it converges to `π²/6 ≈ 1.644934066848226…`.   If we compute it by brute force, however, we need quite a few terms to get high accuracy:
+```jl
+julia> sum(n -> 1/n^2, 1:100) - π^2/6
+-0.009950166663333482
+
+julia> sum(n -> 1/n^2, 1:10^4) - π^2/6
+-9.99950001654426e-5
+
+julia> sum(n -> 1/n^2, 1:10^9) - π^2/6
+-9.999985284281365e-10
+```
+Even with 10⁹ terms we get only about 9 digits.   Instead, we can use `extrapolate` (starting at 1 term):
+```jl
+julia> val, err = extrapolate(1, x0=Inf, rtol=0) do N
+           @show N
+           sum(n -> 1/n^2, 1:Int(N))
+       end
+N = 1.0
+N = 8.0
+N = 64.0
+N = 512.0
+N = 4096.0
+N = 32768.0
+N = 262144.0
+N = 2.097152e6
+(1.644934066848228, 0.0)
+
+julia> val - π^2/6
+1.5543122344752192e-15
+```
+By `32768` terms, the extrapolated value is accurate to about 15 digits.
+
 ### Numerical derivatives
 
 A classic application of Richardson extrapolation is the accurate evaluation of derivatives via [finite-difference approximations](https://en.wikipedia.org/wiki/Finite_difference) (although analytical derivatives, e.g. by automatic differentiation, are of course vastly more efficient when they are available).  In this example, we use Richardson extrapolation on the forward-difference approximation `f'(x) ≈ (f(x+h)-f(x))/h`, for which the error decreases as `O(h)` but a naive application to a very small `h` will yield a huge [cancellation error](https://en.wikipedia.org/wiki/Loss_of_significance) from floating-point roundoff effects.   We differentiate `f(x)=sin(x)` at `x=1`, for which the correct answer is `cos(1) ≈ 0.5403023058681397174009366...`, starting with `h=0.1`
