@@ -107,6 +107,6 @@ end
     @test val - 1 ≈ 9.49995637711254e-12
 
     # non-decreasing |h| is an error:
-    @test_throws ArgumentError extrapolate((f(h),h) for h in [1, 0.8, 1.3])
-    @test_throws ArgumentError extrapolate((f(h),h) for h in [1, 0.8, 0.8])
+    @test_throws ArgumentError extrapolate((sin(h)/h,h) for h in [1, 0.8, 1.3])
+    @test_throws ArgumentError extrapolate((sin(h)/h,h) for h in [1, 0.8, 0.8])
 end
