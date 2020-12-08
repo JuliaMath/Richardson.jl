@@ -20,8 +20,8 @@ export extrapolate
 
 """
     extrapolate(f, h; contract=0.125, x0=zero(h), power=1,
-                      atol=0, rtol=atol>0 ? 0 : sqrt(ε), maxeval=typemax(Int),
-                      breaktol=2)
+                      atol=0, rtol=atol>0 ? 0 : sqrt(ε),
+                      maxeval=typemax(Int), breaktol=2)
 
 Extrapolate `f(x)` to `f₀ ≈ f(x0)`, evaluating `f` only at `x > x0` points
 (or `x < x0` if `h < 0`) using Richardson extrapolation starting at
@@ -72,8 +72,8 @@ so that its Taylor series contains only *even* powers of `h`,
 you can accelerate convergence by passing `power=2`.
 """
 function extrapolate(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.125), x0::Number=zero(h_), power::Number=1,
-                     atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))), maxeval=typemax(Int),
-                     breaktol::Real=2)
+                     atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))),
+                     maxeval::Integer=typemax(Int), breaktol::Real=2)
     if isinf(x0)
         # use a change of variables x = 1/u
         return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, maxeval=maxeval, contract = abs(contract) > 1 ? inv(contract) : contract, x0=inv(x0), power=power)
@@ -112,5 +112,64 @@ end
 # support non-numeric h as long as it is in a vector space
 extrapolate(f, h; x0=zero(h), kws...) =
     extrapolate(s -> f(x0+s*h), one(norm(h)); kws...)
+
+"""
+    extrapolate(fh_itr; power=1,
+                        atol=0, rtol=0, maxeval=typemax(Int), breaktol=Inf)
+
+Similar to `extrapolate(f, h)`, performs Richardson extrapolation of a sequence of
+values `f(h)` to `h → 0`, but takes an iterable collection `fh_itr` of a
+sequence of `(f(h), h)` tuples (in order of decreasing `|h|`).
+
+There is no `contract` keyword argument since the contraction factors are determined
+by the sequence of `h` values (which need not contract by the same amount).  The
+tolerances `atol` and `rtol` both default to `0` so that by default it examines
+*all* of the values in the `fh_itr` collection.   Otherwise, the keyword arguments
+have the same meanings as in `extrapolate(f, h)`.
+"""
+function extrapolate(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
+                             breaktol::Real=Inf, maxeval::Integer=typemax(Int))
+    (rtol ≥ 0 && atol ≥ zero(atol)) || throw(ArgumentError("rtol and atol must be nonnegative"))
+    breaktol > 0 || throw(ArgumentError("breaktol must be positive"))
+    Base.IteratorSize(fh_itr) isa Base.IsInfinite && iszero(atol) && iszero(rtol) && breaktol==Inf && maxeval==typemax(Int) &&
+        throw(ArgumentError("stopping criteria must be supplied for infinite iterators"))
+    itr = iterate(fh_itr)
+    itr === nothing && throw(ArgumentError("(f,h) iterator must be non-empty"))
+    (f,h), state = itr
+    neville = [f] # the current diagonal of the Neville tableau
+    f₀ = neville[1]
+    hvals = [h]
+    if Base.IteratorSize(fh_itr) isa Base.HasLength
+        n = length(fh_itr)
+        sizehint!(neville, n)
+        sizehint!(hvals, n)
+    end
+    err::typeof(float(norm(f₀))) = Inf
+    numeval = 1
+    while numeval < maxeval
+        numeval += 1
+        itr = iterate(fh_itr, state)
+        itr === nothing && break
+        (f′,h′), state = itr
+        push!(neville, f′)
+        push!(hvals, h′)
+        abs(h) > abs(h′) || throw(ArgumentError("|$h′| ≥ |$h| is not decreasing"))
+        h = h′
+        minerr′ = oftype(err, Inf)
+        for i = length(neville)-1:-1:1
+            c = (hvals[i] / h′)^power
+            old = neville[i]
+            neville[i] = neville[i+1] + (neville[i+1] - neville[i]) / (c - 1)
+            err′ = norm(neville[i] - old)
+            minerr′ = min(minerr′, err′)
+            if err′ < err
+                f₀, err = neville[i], err′
+            end
+        end
+        (minerr′ > breaktol*err || !isfinite(minerr′)) && break # stop early if error increases too much
+        err ≤ max(rtol*norm(f₀), atol) && break # converged
+    end
+    return (f₀, err)
+end
 
 end # module

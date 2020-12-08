@@ -18,7 +18,7 @@ series in `h`.   (See e.g. [these course notes by Prof. Flaherty at RPI](http://
 ## Usage
 
 ```jl
-extrapolate(f, h; contract=0.125, x0=zero(h),
+extrapolate(f, h; contract=0.125, x0=zero(h), power=1,
                   atol=0, rtol=atol>0 ? 0 : sqrt(ε), maxeval=typemax(Int), breaktol=2)
 ```
 
@@ -69,6 +69,20 @@ value of `power` (e.g. `power=0.5`) if your `f` has some different
 an *even* function around `x0`, i.e. `f(x0+h) == f(x0-h)`,
 so that its Taylor series contains only *even* powers of `h`,
 you can accelerate convergence by passing `power=2`.
+
+```jl
+extrapolate(fh_itr; power=1, atol=0, rtol=0, maxeval=typemax(Int), breaktol=Inf)
+```
+
+Similar to `extrapolate(f, h)`, performs Richardson extrapolation of a sequence of
+values `f(h)` to `h → 0`, but takes an iterable collection `fh_itr` of a
+sequence of `(f(h), h)` tuples (in order of decreasing `|h|`).
+
+There is no `contract` keyword argument since the contraction factors are determined
+by the sequence of `h` values (which need not contract by the same amount).  The
+tolerances `atol` and `rtol` both default to `0` so that by default it examines
+*all* of the values in the `fh_itr` collection.   Otherwise, the keyword arguments
+have the same meanings as in `extrapolate(f, h)`.
 
 ## Examples
 
