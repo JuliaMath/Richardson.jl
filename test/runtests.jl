@@ -110,3 +110,14 @@ end
     @test_throws ArgumentError extrapolate((sin(h)/h,h) for h in [1, 0.8, 1.3])
     @test_throws ArgumentError extrapolate((sin(h)/h,h) for h in [1, 0.8, 0.8])
 end
+
+@testset "in-place API" begin
+    # collection of irregular contraction ratios:
+    val, err = extrapolate!([(sin(h)/h,h) for h in [1, 0.8, 0.3, 0.2, 0.1, 0.03, 0.01]])
+    @test err < 1e-7
+    @test val - 1 ≈ 9.49995637711254e-12
+
+    # non-decreasing |h| is an error:
+    @test_throws ArgumentError extrapolate!([(sin(h)/h,h) for h in [1, 0.8, 1.3]])
+    @test_throws ArgumentError extrapolate!([(sin(h)/h,h) for h in [1, 0.8, 0.8]])
+end

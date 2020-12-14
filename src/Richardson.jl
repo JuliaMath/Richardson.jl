@@ -16,7 +16,7 @@ module Richardson
 
 using LinearAlgebra
 
-export extrapolate
+export extrapolate, extrapolate!
 
 """
     extrapolate(f, h; contract=0.125, x0=zero(h), power=1,
@@ -164,6 +164,51 @@ function extrapolate(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
             minerr′ = min(minerr′, err′)
             if err′ < err
                 f₀, err = neville[i], err′
+            end
+        end
+        (minerr′ > breaktol*err || !isfinite(minerr′)) && break # stop early if error increases too much
+        err ≤ max(rtol*norm(f₀), atol) && break # converged
+    end
+    return (f₀, err)
+end
+
+"""
+    extrapolate!(fh::AbstractVector; power=1, atol=0, rtol=0, maxeval=typemax(Int), breaktol=Inf)
+
+Similar to `extrapolate(fh)`, performs Richardson extrapolation on an array `fh`
+of `(f(h), h)` tuples (in order of decreasing `|h|`), but overwrites the array
+`fh` in-place with intermediate calculations.
+
+(Thus, the array `fh` must be a vector of `Tuple{T,H}` values, where `H<:Number` is
+the type of `h` and `T` is the type of the extrapolated `f(0)` **result**.  This `T`
+should be a floating-point type, i.e. `fh` should contain `float(f(h))` if the
+function you are extrapolating is not already floating-point-valued.)
+"""
+function extrapolate!(fh::AbstractVector{<:Tuple{<:Any,<:Number}}; power::Number=1, atol::Real=0, rtol::Real = 0,
+                      breaktol::Real=Inf, maxeval::Integer=typemax(Int))
+    (rtol ≥ 0 && atol ≥ zero(atol)) || throw(ArgumentError("rtol and atol must be nonnegative"))
+    breaktol > 0 || throw(ArgumentError("breaktol must be positive"))
+    isempty(fh) && throw(ArgumentError("(f,h) array must be non-empty"))
+    (f₀,h) = first(fh)
+    err::typeof(float(norm(f₀))) = Inf
+    numeval = 1
+    maxeval = min(maxeval, length(fh))
+    while numeval < maxeval
+        numeval += 1
+        (f′,h′) = fh[numeval + (firstindex(fh)-1)]
+        abs(h) > abs(h′) || throw(ArgumentError("|$h′| ≥ |$h| is not decreasing"))
+        h = h′
+        minerr′ = oftype(err, Inf)
+        fᵢ₊₁ = f′
+        for i = numeval-1:-1:1
+            fᵢ,hᵢ = fh[i + (firstindex(fh)-1)]
+            c = (hᵢ / h′)^power
+            fᵢ₊₁ += (fᵢ₊₁ - fᵢ) / (c - 1)
+            fh[i + (firstindex(fh)-1)] = (fᵢ₊₁,hᵢ)
+            err′ = norm(fᵢ₊₁ - fᵢ)
+            minerr′ = min(minerr′, err′)
+            if err′ < err
+                f₀, err = fᵢ₊₁, err′
             end
         end
         (minerr′ > breaktol*err || !isfinite(minerr′)) && break # stop early if error increases too much

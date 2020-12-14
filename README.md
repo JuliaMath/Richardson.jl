@@ -84,6 +84,19 @@ tolerances `atol` and `rtol` both default to `0` so that by default it examines
 *all* of the values in the `fh_itr` collection.   Otherwise, the keyword arguments
 have the same meanings as in `extrapolate(f, h)`.
 
+```jl
+extrapolate!(fh::AbstractVector; power=1, atol=0, rtol=0, maxeval=typemax(Int), breaktol=Inf)
+```
+
+Similar to `extrapolate(fh)`, performs Richardson extrapolation on an array `fh`
+of `(f(h), h)` tuples (in order of decreasing `|h|`), but overwrites the array
+`fh` in-place with intermediate calculations.
+
+(Thus, the array `fh` must be a vector of `Tuple{T,H}` values, where `H<:Number` is
+the type of `h` and `T` is the type of the extrapolated `f(0)` **result**.  This `T`
+should be a floating-point type, i.e. `fh` should contain `float(f(h))` if the
+function you are extrapolating is not already floating-point-valued.)
+
 ## Examples
 
 For example, let's extrapolate `sin(x)/x` to `x=0` (where the correct answer is `1`) starting at `x=1`, printing out the `x` value at each step so that we can see what the algorithm is doing.
