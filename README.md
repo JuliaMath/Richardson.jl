@@ -196,7 +196,7 @@ N = 4096.0
 N = 32768.0
 (1.6449340668482288, 4.384936858059518e-12)
 
-julia> (val - π^2/6)/(pi^2/6)
+julia> (val - π^2/6)/(π^2/6)
 1.4848562646983628e-15
 ```
 By `32768` terms, the extrapolated value is accurate to about 15 digits.
