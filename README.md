@@ -283,7 +283,7 @@ h = 0.125
 h = 0.015625
 (-832.4165749908325, 733.4066740007335)
 ```
-Before reached an `|h| < 0.01` where the power series could begin to converge, `extrapolate` gave up and returned a wrong answer (with a large error estimate to let you know that the result is garbage)!   In contrast, if we start with a small enough `h` then it converges just fine and returns the correct answer (`-10000`) to nearly machine precision:
+Before reaching an `|h| < 0.01` where the power series could begin to converge, `extrapolate` gave up and returned a wrong answer (with a large error estimate to let you know that the result is garbage)!   In contrast, if we start with a small enough `h` then it converges just fine and returns the correct answer (`-10000`) to nearly machine precision:
 ```jl
 julia> extrapolate(0.01) do h
            @show h
