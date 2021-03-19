@@ -86,7 +86,7 @@ have the same meanings as in `extrapolate(f, h)`.
 extrapolate!(fh::AbstractVector; power=1, atol=0, rtol=0, maxeval=typemax(Int), breaktol=Inf)
 ```
 
-Similar to `extrapolate(fh)`, performs Richardson extrapolation on an array `fh`
+Similar to `extrapolate(fh_itr)`, performs Richardson extrapolation on an array `fh`
 of `(f(h), h)` tuples (in order of decreasing `|h|`), but overwrites the array
 `fh` in-place with intermediate calculations.
 
