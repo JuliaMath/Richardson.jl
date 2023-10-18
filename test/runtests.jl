@@ -98,6 +98,9 @@ using Richardson, Test, LinearAlgebra
         x = 0.01
         (1/(x+h) - 1/x) / h
     end[1]
+
+    # floating-point promotion
+    @test extrapolate(x -> x > 0.05 ? 2 : 1, 0.1) === (1.0, 0.0)
 end
 
 @testset "iterator API" begin
