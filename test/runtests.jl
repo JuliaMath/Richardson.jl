@@ -98,6 +98,9 @@ using Richardson, Test, LinearAlgebra
         x = 0.01
         (1/(x+h) - 1/x) / h
     end[1]
+
+    # floating-point promotion
+    @test extrapolate(x -> x > 0.05 ? 2 : 1, 0.1) === (1.0, 0.0)
 end
 
 @testset "iterator API" begin
@@ -109,6 +112,9 @@ end
     # non-decreasing |h| is an error:
     @test_throws ArgumentError extrapolate((sin(h)/h,h) for h in [1, 0.8, 1.3])
     @test_throws ArgumentError extrapolate((sin(h)/h,h) for h in [1, 0.8, 0.8])
+
+    # floating-point promotion (issue #4)
+    @test extrapolate([(3,10), (5,5), (10,2)]) === (7.0, 4.0)
 end
 
 @testset "in-place API" begin

@@ -83,7 +83,7 @@ function extrapolate(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.1
     0 < abs(contract) < 1 || throw(ArgumentError("contract must be in (0,1)"))
     h::typeof(float(x0+h_*contract)) = h_
     invcontract = inv(contract)^power
-    neville = [f(x0+h)] # the current diagonal of the Neville tableau
+    neville = [float(f(x0+h))] # the current diagonal of the Neville tableau
     f₀ = neville[1]
     err::typeof(float(norm(f₀))) = Inf
     numeval = 1
@@ -136,10 +136,10 @@ function extrapolate(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
     itr = iterate(fh_itr)
     itr === nothing && throw(ArgumentError("(f,h) iterator must be non-empty"))
     (f,h), state = itr
-    neville = [f] # the current diagonal of the Neville tableau
+    neville = [float(f)] # the current diagonal of the Neville tableau
     f₀ = neville[1]
     hvals = [h]
-    if Base.IteratorSize(fh_itr) isa Base.HasLength
+    if Base.IteratorSize(fh_itr) isa Union{Base.HasLength, Base.HasShape}
         n = length(fh_itr)
         sizehint!(neville, n)
         sizehint!(hvals, n)
