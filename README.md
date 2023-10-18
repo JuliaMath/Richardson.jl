@@ -11,7 +11,7 @@ polynomial until convergence is achieved to a desired tolerance
 (or convergence stalls due to e.g. floating-point errors).  This
 allows one to obtain `f(x0)` to high-order accuracy, assuming
 that `f(x0+h)` has a Taylor series or some other power
-series in `h`.   (See e.g. [these course notes by Prof. Flaherty at RPI](http://www.cs.rpi.edu/~flaherje/pdf/ode4.pdf).)
+series in `h`.   (See e.g. [these course notes by Prof. Flaherty at RPI](https://web.archive.org/web/20190214233129/http://www.cs.rpi.edu/~flaherje/pdf/ode4.pdf).)
 
 ## Usage
 
