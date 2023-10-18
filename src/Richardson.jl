@@ -138,7 +138,7 @@ function extrapolate(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
     (f,h), state = itr
     neville = [float(f)] # the current diagonal of the Neville tableau
     f₀ = neville[1]
-    hvals = [float(h)]
+    hvals = [h]
     if Base.IteratorSize(fh_itr) isa Base.HasLength
         n = length(fh_itr)
         sizehint!(neville, n)
