@@ -1,9 +1,10 @@
 # Richardson package for Julia
 
 The `Richardson` package provides a function `extrapolate` that
-extrapolates a given function `f(x)` to `f(x0)`, evaluating
+extrapolates any function `f(x)` to `f(x0)`, evaluating
 `f` only  at a geometric sequence of points `> x0`
-(or optionally `< x0`).
+(or optionally `< x0`) or at a given sequence of points.  `f(x)` can
+return scalars, vectors, or any type implementing a [normed vector space](https://en.wikipedia.org/wiki/Normed_vector_space).
 
 The key algorithm is [Richardson extrapolation](https://en.wikipedia.org/wiki/Richardson_extrapolation) using a Neville–Aitken
 tableau, which adaptively increases the degree of an extrapolation
