@@ -127,3 +127,9 @@ end
     @test_throws ArgumentError extrapolate!([(sin(h)/h,h) for h in [1, 0.8, 1.3]])
     @test_throws ArgumentError extrapolate!([(sin(h)/h,h) for h in [1, 0.8, 0.8]])
 end
+
+
+@testset "type stability" begin
+    @inferred extrapolate(x -> sin(x)/x, 1)
+    @inferred extrapolate(x -> sin(x)/x, 1.0)
+end
