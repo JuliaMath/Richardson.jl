@@ -75,9 +75,15 @@ function extrapolate(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.1
                      atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))),
                      maxeval::Integer=typemax(Int), breaktol::Real=2)
     if isinf(x0)
-        # use a change of variables x = 1/u
-        return extrapolate(u -> f(inv(u)), inv(h_); rtol=rtol, atol=atol, maxeval=maxeval, contract = abs(contract) > 1 ? inv(contract) : contract, x0=inv(x0), power=power)
+         # use a change of variables x = 1/u
+         contract = abs(contract) > 1 ? inv(contract) : contract
+        _extrapolate(u -> f(inv(u)), inv(h_), contract, inv(x0), power, atol, rtol, maxeval, breaktol)
+    else
+        _extrapolate(f, h_, contract, x0, power, atol, rtol, maxeval, breaktol)
     end
+end
+
+function _extrapolate(f, h_::Number, contract, x0, power, atol, rtol, maxeval, breaktol)
     (rtol ≥ 0 && atol ≥ zero(atol)) || throw(ArgumentError("rtol and atol must be nonnegative"))
     breaktol > 0 || throw(ArgumentError("breaktol must be positive"))
     0 < abs(contract) < 1 || throw(ArgumentError("contract must be in (0,1)"))
