@@ -1,30 +1,61 @@
 name: CI
+# Run on master, tags, or any pull request
 on:
   pull_request:
   push:
-    branches:
-      - master
-    tags: '*'
+    branches: [master]
+    tags: ["*"]
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         version:
-          - '1.0'
-          - '1'
-#          - 'nightly'
+          - "1.0"
+          - "1"    # Latest Release
         os:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
         arch:
           - x64
+          - x86
+        exclude:
+          # Test 32-bit only on Linux
+          - os: macOS-latest
+            arch: x86
+          - os: windows-latest
+            arch: x86
+          # Exclude macOS-latest x64 to prevent it running by default for all versions
+          - os: macOS-latest
+            arch: x64
+        include:
+          # Add specific version used to run the reference tests.
+          # Must be kept in sync with version check in `test/runtests.jl`,
+          # and with the branch protection rules on the repository which
+          # require this specific job to pass on all PRs
+          # (see Settings > Branches > Branch protection rules).
+          - os: ubuntu-latest
+            version: 1.10.6
+            arch: x64
+          # Intel macOS runner for older Julia versions
+          - version: "1.0"
+            os: macos-15-intel
+            arch: x64
+          # Apple Silicon macOS runner for latest Julia version (aarch64)
+          - version: "1"
+            os: macOS-latest
+            arch: aarch64
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
@@ -33,15 +64,20 @@ jobs:
           cache-name: cache-artifacts
         with:
           path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
           restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
+            ${{ runner.os }}-${{ matrix.arch }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-${{ matrix.arch }}-test-
+            ${{ runner.os }}-${{ matrix.arch }}-
             ${{ runner.os }}-
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
+      - uses: julia-actions/julia-buildpkg@latest
+      - run: |
+          git config --global user.name Tester
+          git config --global user.email te@st.er
+      - uses: julia-actions/julia-runtest@latest
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v6
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
