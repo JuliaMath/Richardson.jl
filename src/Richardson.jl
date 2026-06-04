@@ -74,7 +74,7 @@ you can accelerate convergence by passing `power=2`.
 function extrapolate(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.125), x0::Number=zero(h_), power::Number=1,
                      atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))),
                      maxeval::Integer=typemax(Int), breaktol::Real=2)
-    f₀, err, _  = extrapolate_info(f, h_; contract, x0, power, atol, rtol, maxeval, breaktol)
+    f₀, err, _  = extrapolate_info(f, h_; contract=contract, x0=x0, power=power, atol=atol, rtol=rtol, maxeval=maxeval, breaktol=breaktol)
     return (f₀, err)
 end
 
@@ -154,7 +154,7 @@ have the same meanings as in `extrapolate(f, h)`.
 """
 function extrapolate(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
                              breaktol::Real=Inf, maxeval::Integer=typemax(Int))
-    f₀, err, _ = extrapolate_info(fh_itr; power, atol, rtol, breaktol, maxeval)
+    f₀, err, _ = extrapolate_info(fh_itr; power=power, atol=atol, rtol=rtol, maxeval=maxeval, breaktol=breaktol)
     return (f₀, err)
 end
 
