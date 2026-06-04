@@ -135,6 +135,9 @@ end
 
     fd_error = Δx -> (sin(1+Δx)-sin(1))/Δx - cos(1)
     @test extrapolate(dx -> fd_error(dx)/fd_error(dx/2), 10, rtol=0, breaktol=Inf)[1] ≈ 2
+
+    # constant functions should still give an error of zero
+    @test extrapolate(x -> 1, 0.1, rtol=0, breaktol=Inf) == (1.0, 0.0)
 end
 
 @testset "type stability" begin
