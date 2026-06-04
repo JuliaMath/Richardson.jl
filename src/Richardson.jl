@@ -74,6 +74,21 @@ you can accelerate convergence by passing `power=2`.
 function extrapolate(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.125), x0::Number=zero(h_), power::Number=1,
                      atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))),
                      maxeval::Integer=typemax(Int), breaktol::Real=2)
+    f₀, err, _  = extrapolate_info(f, h_; contract, x0, power, atol, rtol, maxeval, breaktol)
+    return (f₀, err)
+end
+
+"""
+    extrapolate_info(f, h; contract=0.125, x0=zero(h), power=1, atol=0, rtol=0, maxeval=typemax(Int), breaktol=Inf)
+    extrapolate_info(fh_itr; power=1, atol=0, rtol=0, maxeval=typemax(Int), breaktol=Inf)
+
+Like `extrapolate(...; ...)`, but returns `(f₀, err, indices)` where `indices` is the
+range of (1-based) indices of the `f` evaluations or `fh_itr` iterations used to extrapolate `f₀`.
+(This corresponsds to the subsequence that yielded the lowest error estimate for the extrapolation.)
+"""
+function extrapolate_info(f, h_::Number; contract::Number=oftype(float(real(h_)), 0.125), x0::Number=zero(h_), power::Number=1,
+                          atol::Real=0, rtol::Real = atol > zero(atol) ? zero(one(float(real(x0+h_)))) : sqrt(eps(typeof(one(float(real(x0+h_)))))),
+                          maxeval::Integer=typemax(Int), breaktol::Real=2)
     if isinf(x0)
          # use a change of variables x = 1/u
          contract = abs(contract) > 1 ? inv(contract) : contract
@@ -91,6 +106,7 @@ function _extrapolate(f, h_::Number, contract, x0, power, atol, rtol, maxeval, b
     invcontract = inv(contract)^power
     neville = [float(f(x0+h))] # the current diagonal of the Neville tableau
     f₀ = neville[1]
+    indices = 1:1
     err::typeof(float(norm(f₀))) = Inf
     numeval = 1
     while numeval < maxeval
@@ -104,15 +120,18 @@ function _extrapolate(f, h_::Number, contract, x0, power, atol, rtol, maxeval, b
             neville[i] = neville[i+1] + (neville[i+1] - neville[i]) / (c - 1)
             err′ = norm(neville[i] - old)
             minerr′ = min(minerr′, err′)
+            iszero(err′) && isinf(breaktol) && isfinite(err) && continue # don't trust unchanging error
             if err′ < err
                 f₀, err = neville[i], err′
+                indices = i:length(neville)
             end
             c *= invcontract
         end
         (minerr′ > breaktol*err || !isfinite(minerr′)) && break # stop early if error increases too much
         err ≤ max(rtol*norm(f₀), atol) && break # converged
+        iszero(minerr′) && break # no progress
     end
-    return (f₀, err)
+    return (f₀, err, indices)
 end
 
 # support non-numeric h as long as it is in a vector space
@@ -135,6 +154,12 @@ have the same meanings as in `extrapolate(f, h)`.
 """
 function extrapolate(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
                              breaktol::Real=Inf, maxeval::Integer=typemax(Int))
+    f₀, err, _ = extrapolate_info(fh_itr; power, atol, rtol, breaktol, maxeval)
+    return (f₀, err)
+end
+
+function extrapolate_info(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
+                          breaktol::Real=Inf, maxeval::Integer=typemax(Int))
     (rtol ≥ 0 && atol ≥ zero(atol)) || throw(ArgumentError("rtol and atol must be nonnegative"))
     breaktol > 0 || throw(ArgumentError("breaktol must be positive"))
     Base.IteratorSize(fh_itr) isa Base.IsInfinite && iszero(atol) && iszero(rtol) && breaktol==Inf && maxeval==typemax(Int) &&
@@ -150,6 +175,7 @@ function extrapolate(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
         sizehint!(neville, n)
         sizehint!(hvals, n)
     end
+    indices = 1:1
     err::typeof(float(norm(f₀))) = Inf
     numeval = 1
     while numeval < maxeval
@@ -168,14 +194,17 @@ function extrapolate(fh_itr; power::Number=1, atol::Real=0, rtol::Real = 0,
             neville[i] = neville[i+1] + (neville[i+1] - neville[i]) / (c - 1)
             err′ = norm(neville[i] - old)
             minerr′ = min(minerr′, err′)
+            iszero(err′) && isinf(breaktol) && isfinite(err) && continue # don't trust unchanging error
             if err′ < err
                 f₀, err = neville[i], err′
+                indices = i:length(neville)
             end
         end
         (minerr′ > breaktol*err || !isfinite(minerr′)) && break # stop early if error increases too much
         err ≤ max(rtol*norm(f₀), atol) && break # converged
+        iszero(minerr′) && break # no progress
     end
-    return (f₀, err)
+    return (f₀, err, indices)
 end
 
 """
@@ -213,12 +242,14 @@ function extrapolate!(fh::AbstractVector{<:Tuple{<:Any,<:Number}}; power::Number
             fh[i + (firstindex(fh)-1)] = (fᵢ₊₁,hᵢ)
             err′ = norm(fᵢ₊₁ - fᵢ)
             minerr′ = min(minerr′, err′)
+            iszero(err′) && isinf(breaktol) && isfinite(err) && continue # don't trust unchanging error
             if err′ < err
                 f₀, err = fᵢ₊₁, err′
             end
         end
         (minerr′ > breaktol*err || !isfinite(minerr′)) && break # stop early if error increases too much
         err ≤ max(rtol*norm(f₀), atol) && break # converged
+        iszero(minerr′) && break # no progress
     end
     return (f₀, err)
 end
