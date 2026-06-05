@@ -1,5 +1,7 @@
 # Richardson package for Julia
 
+[![CI](https://github.com/JuliaMath/Richardson.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/JuliaMath/Richardson.jl/actions/workflows/CI.yml)
+
 The `Richardson` package provides a function `extrapolate` that
 extrapolates any function `f(x)` to `f(x0)`, evaluating
 `f` only  at a geometric sequence of points `> x0`
