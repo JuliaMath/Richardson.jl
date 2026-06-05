@@ -128,6 +128,17 @@ end
     @test_throws ArgumentError extrapolate!([(sin(h)/h,h) for h in [1, 0.8, 0.8]])
 end
 
+# previous to the heuristic that we ignore zero-error predictions,
+# it could sometimes give garbage results for rtol=0, breaktol=Inf
+@testset "breakdown" begin
+    @test extrapolate(dx -> (sin(1+dx)-sin(1))/dx, 10, rtol=0, breaktol=Inf)[1] ≈ cos(1) rtol=1e-11
+
+    fd_error = Δx -> (sin(1+Δx)-sin(1))/Δx - cos(1)
+    @test extrapolate(dx -> fd_error(dx)/fd_error(dx/2), 10, rtol=0, breaktol=Inf)[1] ≈ 2
+
+    # constant functions should still give an error of zero
+    @test extrapolate(x -> 1, 0.1, rtol=0, breaktol=Inf) == (1.0, 0.0)
+end
 
 @testset "type stability" begin
     @inferred extrapolate(x -> sin(x)/x, 1)
